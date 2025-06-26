@@ -12,4 +12,4 @@ Tasks1 task1 = new Tasks1(optionsBuilder.Options);
 Tasks2 task2 = new Tasks2(optionsBuilder.Options);
 Tasks3 task3 = new Tasks3(optionsBuilder.Options);
 
-task1.Execute();
+await task1.Execute();
