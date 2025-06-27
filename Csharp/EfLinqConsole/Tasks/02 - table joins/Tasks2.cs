@@ -384,13 +384,21 @@ namespace EfLinqConsole.Tasks._02___table_joins
         {
             await using var context = new MyDbContext(options);
 
-            var pracownicy = context.pracownicies
-                .Select(p => new { p.id, p.nazwisko });
+            var pracownicy = context.pracownicies;
+            var stanowiska = context.stanowiskas;
+            var realizacje = context.realizacjes;
+            var projekty = context.projekties;
+
+            var result = pracownicy.Where(p => p.nazwisko == "Mielcarz")
+                .Join(projekty, p => p.id, proj => proj.kierownik, (p, proj) => new
+                {
+                    proj.nazwa
+                });
 
             Console.WriteLine("\n" + nameof(AditionalTask1_1) + "\n");
-            foreach (var p in pracownicy)
+            foreach (var r in result)
             {
-                PrintRow(15, "Pracownik nr. " + p.id + " - " + p.nazwisko);
+                PrintRow(15, r.nazwa);
             }
         }
 
@@ -398,45 +406,62 @@ namespace EfLinqConsole.Tasks._02___table_joins
         {
             await using var context = new MyDbContext(options);
 
-            var pracownicy = context.pracownicies
-                .Select(p => new { p.nazwisko, p.placa, p.dod_funkc })
-                .ToList()
-                .Where(p => p.placa < 10 * (p.dod_funkc ?? 0));
+            var pracownicy = context.pracownicies;
+            var stanowiska = context.stanowiskas;
+            var realizacje = context.realizacjes;
+            var projekty = context.projekties;
+
+            var result = realizacje
+                .Join(pracownicy, r => r.idprac, p => p.id, (r, p) => new { r, p })
+                .Join(projekty, rp => rp.r.idproj, proj => proj.id, (rp, proj) => new {
+                    rp.p.nazwisko, proj.nazwa
+                })
+                .Where(r => r.nazwisko == "Andrzejewicz");
 
             Console.WriteLine("\n" + nameof(AditionalTask1_2) + "\n");
-            foreach (var p in pracownicy)
+            foreach (var r in result)
             {
-                PrintRow(15, p.nazwisko, p.placa, p.dod_funkc);
+                PrintRow(15, r.nazwa);
             }
         }
 
         private async Task AditionalTask1_3()
         {
-            await using var context = new MyDbContext(options);
-
-            var projekty = context.projekties
-                .Where(p => p.datazakonczfakt == null)
-                .Select(p => new { p.id, p.nazwa, p.datazakonczfakt });
-
-            Console.WriteLine("\n" + nameof(AditionalTask1_3) + "\n");
-            foreach (var p in projekty)
-            {
-                PrintRow(15, p.id, p.nazwa, p.datazakonczfakt == null ? "[null]" : p.datazakonczfakt.ToString());
-            }
+            Console.WriteLine("\n AditionalTask1_3 not possible in C#\n");
         }
 
         private async Task AditionalTask1_4()
         {
             await using var context = new MyDbContext(options);
 
-            var pracownicy = context.pracownicies
-                .Where(p => p.stanowisko.Equals("profesor") != true)
-                .Select(p => new { p.id, p.nazwisko, premia = p.dod_funkc ?? 100 });
+            var pracownicy = context.pracownicies;
+            var stanowiska = context.stanowiskas;
+            var realizacje = context.realizacjes;
+            var projekty = context.projekties;
+
+
+            var result = projekty
+                .GroupJoin(
+                    realizacje
+                    .Join(pracownicy, r => r.idprac, p => p.id, (r, p) => new
+                    { r.idproj, p.stanowisko })
+                    .Where(rp => rp.stanowisko == "doktorant"),
+                    proj => proj.id,
+                    rp => rp.idproj,
+                    (proj, rp) => new { proj.nazwa, rp }
+                )
+                .SelectMany(r => r.rp.DefaultIfEmpty(), (r, rp) => new
+                {
+                    r.nazwa,
+                    rp.idproj
+                })
+                .Where(r => r.idproj == null)
+                .Select(r => r.nazwa);
 
             Console.WriteLine("\n" + nameof(AditionalTask1_4) + "\n");
-            foreach (var p in pracownicy)
+            foreach (var r in result)
             {
-                PrintRow(15, p);
+                PrintRow(15, r);
             }
         }
         
@@ -444,14 +469,24 @@ namespace EfLinqConsole.Tasks._02___table_joins
         {
             await using var context = new MyDbContext(options);
 
-            var klasy = context.klasies
-                .Where(k => k.liczbadzial >= 10)
-                .Select(k => new { k.klasa, k.kraj });
+            var okrety = context.okreties;
+            var bitwy = context.bitwies;
+            var skutki = context.skutkis;
+            var klasy = context.klasies;
+
+            var result = okrety.Join(
+                klasy.Where(k => k.wypornosc > 35000),
+                o => o.klasa,
+                k => k.klasa,
+                (o, k) => new
+                {
+                    o.nazwa
+                });
 
             Console.WriteLine("\n" + nameof(AditionalTask2_1) + "\n");
-            foreach (var k in klasy)
+            foreach (var r in result)
             {
-                PrintRow(15, k);
+                PrintRow(15, r);
             }
         }
         
@@ -459,14 +494,26 @@ namespace EfLinqConsole.Tasks._02___table_joins
         {
             await using var context = new MyDbContext(options);
 
-            var okrety = context.okreties
-                .Where(o => o.zwodowano == null || o.zwodowano < 1918)
-                .Select(o => o.nazwa);
+            var okrety = context.okreties;
+            var bitwy = context.bitwies;
+            var skutki = context.skutkis;
+            var klasy = context.klasies;
+
+            var result = skutki
+                .Where(s => s.bitwa == "Guadalcanal")
+                .Join(okrety, s => s.okret, o => o.nazwa, (s, o) => new
+                {
+                    o.nazwa, o.klasa
+                })
+                .Join(klasy, os => os.klasa, k => k.klasa, (os, k) => new
+                {
+                    os.nazwa, k.wypornosc, k.liczbadzial
+                });
 
             Console.WriteLine("\n" + nameof(AditionalTask2_2) + "\n");
-            foreach (var o in okrety)
+            foreach (var r in result)
             {
-                PrintRow(15, o);
+                PrintRow(15, r);
             }
         }
 
@@ -474,14 +521,24 @@ namespace EfLinqConsole.Tasks._02___table_joins
         {
             await using var context = new MyDbContext(options);
 
-            var skutki = context.skutkis
-                .Where(s => s.efekt == "zatopiony")
-                .Select(s => new { s.okret, s.bitwa });
+            var okrety = context.okreties;
+            var bitwy = context.bitwies;
+            var skutki = context.skutkis;
+            var klasy = context.klasies;
+
+            var result = klasy
+                .Join(klasy, k1 => k1.kraj, k2 => k2.kraj, (k1, k2) => new
+                {
+                    k1.kraj, k1.typ, kraj2 = k2.kraj, typ2 = k2.typ
+                })
+                .Where(kk => kk.typ != kk.typ2)
+                .Select(kk => kk.kraj)
+                .Distinct();
 
             Console.WriteLine("\n" + nameof(AditionalTask2_3) + "\n");
-            foreach (var s in skutki)
+            foreach (var r in result)
             {
-                PrintRow(15, s);
+                PrintRow(15, r);
             }
         }
 
@@ -489,14 +546,22 @@ namespace EfLinqConsole.Tasks._02___table_joins
         {
             await using var context = new MyDbContext(options);
 
-            var okrety = context.okreties
-                .Where(o => o.klasa == o.nazwa)
-                .Select(o => o.nazwa);
+            var okrety = context.okreties;
+            var bitwy = context.bitwies;
+            var skutki = context.skutkis;
+            var klasy = context.klasies;
+
+            var result = okrety
+                .Join(klasy, o => o.klasa, k => k.klasa, (o, k) => new
+                {
+                    k.klasa, k.typ, k.kraj, k.liczbadzial, k.kaliber, k.wypornosc,
+                    o.nazwa, o.zwodowano
+                });
 
             Console.WriteLine("\n" + nameof(AditionalTask2_4) + "\n");
-            foreach (var o in okrety)
+            foreach (var r in result)
             {
-                PrintRow(15, o);
+                PrintRow(15, r);
             }
         }
 
@@ -504,18 +569,37 @@ namespace EfLinqConsole.Tasks._02___table_joins
         {
             await using var context = new MyDbContext(options);
 
-            var okrety = context.okreties
-                .Where(o => o.nazwa.StartsWith("R"))
-                .Select(o => o.nazwa);
+            var okrety = context.okreties;
+            var bitwy = context.bitwies;
+            var skutki = context.skutkis;
+            var klasy = context.klasies;
 
-            var skutki = context.skutkis
-                .Where(s => s.okret.StartsWith("R"))
-                .Select(s => s.okret);
-
-            var result = okrety.Concat(skutki);
+            var result = skutki
+                .Where(s => s.bitwa == "Guadalcanal")
+                .GroupJoin(okrety, s => s.okret, o => o.nazwa, (s, o) => new
+                {
+                    s.okret,
+                    o
+                })
+                .SelectMany(so => so.o.DefaultIfEmpty(), (so, o) => new
+                {
+                    so.okret,
+                    o.klasa,
+                })
+                .GroupJoin(klasy, so => so.klasa, k => k.klasa, (so, k) => new
+                {
+                    so.okret,
+                    k
+                })
+                .SelectMany(sok => sok.k.DefaultIfEmpty(), (sok, k) => new
+                {
+                    sok.okret,
+                    k.wypornosc,
+                    k.liczbadzial
+                });
 
             Console.WriteLine("\n" + nameof(AditionalTask2_5) + "\n");
-            foreach (var r in result)
+            foreach(var r in result)
             {
                 PrintRow(15, r);
             }
@@ -525,48 +609,40 @@ namespace EfLinqConsole.Tasks._02___table_joins
         {
             await using var context = new MyDbContext(options);
 
-            var skutki = context.skutkis
-                .Select(s => s.okret)
-                .AsEnumerable()
-                .Where(s => s.Count(c => c == ' ') >= 2);
+            var okrety = context.okreties;
+            var bitwy = context.bitwies;
+            var skutki = context.skutkis;
+            var klasy = context.klasies;
+
+            var result = klasy
+                .GroupJoin(okrety, k => k.klasa, o => o.klasa, (k, o) => new
+                {
+                    k.klasa,
+                    o
+                })
+                .SelectMany(ko => ko.o.DefaultIfEmpty(), (ko, o) => new
+                {
+                    ko.klasa,
+                    o.nazwa
+                })
+                .Where(r => r.nazwa == null)
+                .Select(r => r.klasa);
 
             Console.WriteLine("\n" + nameof(AditionalTask2_6) + "\n");
-            foreach (var s in skutki)
+            foreach (var r in result)
             {
-                PrintRow(15, s);
+                PrintRow(15, r);
             }
         }
 
         private async Task AditionalTask2_7()
         {
-            await using var context = new MyDbContext(options);
-
-            var skutki = context.skutkis
-                .Where(s => s.efekt == "zatopiony")
-                .Select(s => s.bitwa)
-                .Distinct();
-
-            Console.WriteLine("\n" + nameof(AditionalTask2_7) + "\n");
-            foreach (var s in skutki)
-            {
-                PrintRow(15, s);
-            }
+            Console.WriteLine("\n AditionalTask2_7 not possible in C#\n");
         }
         
         private async Task AditionalTask2_8()
         {
-            await using var context = new MyDbContext(options);
-
-            var okrety = context.okreties
-                .OrderByDescending(o => o.zwodowano)
-                .Select(o => new { o.zwodowano, o.nazwa })
-                .Take(1);
-
-            Console.WriteLine("\n" + nameof(AditionalTask2_8) + "\n");
-            foreach (var o in okrety)
-            {
-                PrintRow(15, o);
-            }
+            Console.WriteLine("\n AditionalTask2_8 not possible in C#\n");
         }
 
         void PrintRow(int columnWidth, params object[] values)

@@ -1,4 +1,5 @@
- 
+
+
 -- task 1
 select 	id,
 		nazwisko,
@@ -135,30 +136,28 @@ from realizacje R1
 		on P.id = Proj2.kierownik
 where Proj1.id = R1.idproj or R1.idproj is null 
 
-select *
+
+select R1.idproj, R2Proj1.kierownik, Proj2.kierownik
 from realizacje R1
 	left join (select idproj, idprac, id, nazwa, kierownik
 				from realizacje R2
 					inner join projekty Proj1
 						on Proj1.kierownik = R2.idprac) R2Proj1
-		on R1.idproj = R2Proj1.
+		on R1.idproj = R2Proj1.idproj
+	inner join projekty Proj2
+		on R1.idproj = Proj2.id
 
 
-select  		R1.idproj, R1.idprac,
-				Proj2.kierownik,
-				Proj1.kierownik, Proj1.id
+select 	R1.idproj, R1.idprac,
+		Proj2.kierownik,
+		Proj1.kierownik, Proj1.id
 FROM realizacje R1
 	LEFT JOIN projekty Proj1
     	ON Proj1.kierownik = R1.idprac
 	inner JOIN projekty Proj2
     	ON Proj2.id = R1.idproj
 order by R1.idproj
-		
-where Proj1.id is null or Proj1.id != R1.idproj
-	
-  inner JOIN realizacje R2
-    ON R1.idproj = R2.idproj
-  
+
 
 
 -- task 11
@@ -185,10 +184,16 @@ where P.nazwisko = 'Mielcarz'
 
 select Proj.nazwa
 from realizacje R
-	right join pracownicy P
+	inner join pracownicy P
 		on R.idprac = P.id
 	inner join projekty Proj
 		on Proj.id = R.idproj
+where P.nazwisko = 'Andrzejewicz'
+
+select *
+from pracownicy P
+	inner join realizacje R
+		on R.idprac = P.id
 where P.nazwisko = 'Andrzejewicz'
 
 
@@ -206,14 +211,24 @@ from pracownicy P1
 
 select Proj.nazwa
 from realizacje R
-	right join pracownicy P
+	inner join pracownicy P
 		on R.idprac = P.id
 			and P.stanowisko = 'doktorant' 
 	right join projekty Proj
 		on R.idproj = Proj.id
 where R.idproj is null
 
+select Proj.nazwa
+from projekty Proj
+	left join (	select *
+				from realizacje R
+					inner join pracownicy P
+						on R.idprac = P.id
+				where stanowisko = 'doktorant') R
+		on R.idproj = Proj.id
+where R.idproj is null
 
+		
 -- aditional tasks 2
 
 
