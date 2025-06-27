@@ -1,4 +1,4 @@
-right-- 
+ 
 -- task 1
 select 	id,
 		nazwisko,
@@ -119,6 +119,47 @@ from realizacje R
 	inner join pracownicy P
 		on Proj.kierownik = P.id
 where R.idprac is null
+
+select distinct R1.idproj, R1.idprac,
+				R2.idproj,
+				Proj2.nazwa, Proj2.kierownik,
+				P.nazwisko
+from realizacje R1
+	inner join projekty Proj1
+		on Proj1.kierownik = R1.idprac	
+	right join realizacje R2
+		on R1.idproj = R2.idproj
+	inner join projekty Proj2
+		on Proj2.id = R2.idproj
+	inner join pracownicy P
+		on P.id = Proj2.kierownik
+where Proj1.id = R1.idproj or R1.idproj is null 
+
+select *
+from realizacje R1
+	left join (select idproj, idprac, id, nazwa, kierownik
+				from realizacje R2
+					inner join projekty Proj1
+						on Proj1.kierownik = R2.idprac) R2Proj1
+		on R1.idproj = R2Proj1.
+
+
+select  		R1.idproj, R1.idprac,
+				Proj2.kierownik,
+				Proj1.kierownik, Proj1.id
+FROM realizacje R1
+	LEFT JOIN projekty Proj1
+    	ON Proj1.kierownik = R1.idprac
+	inner JOIN projekty Proj2
+    	ON Proj2.id = R1.idproj
+order by R1.idproj
+		
+where Proj1.id is null or Proj1.id != R1.idproj
+	
+  inner JOIN realizacje R2
+    ON R1.idproj = R2.idproj
+  
+
 
 -- task 11
 
